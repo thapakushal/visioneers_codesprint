@@ -1,13 +1,16 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebookF } from "react-icons/fa";
 import { axiosInstance } from "../../lib/axios";
-
+import { loginRequest,loginSuccess } from "../../features/auth/authSlice";
+import { useDispatch } from "react-redux";
 const LoginPage = () => {
   const [emailOrPhone, setEmailOrPhone] = useState("");
   const [password, setPassword] = useState("");
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   //Function to handle the validation
   const handleValidation = () => {
     if (!emailOrPhone.trim() || !password.trim()) {
@@ -22,11 +25,24 @@ const LoginPage = () => {
     if (!handleValidation()) return;
 
     try {
+      dispatch(loginRequest());
       const response = await axiosInstance.post("/auth/login", {
         email: emailOrPhone,
         password,
       });
       toast.success("Login successful!");
+      dispatch(loginSuccess(response.data.data));
+      const role = response.data.data.role;
+      switch (role) {
+        case "user":
+          navigate("/user");
+          break;
+        case "shop":
+          navigate("/shop");
+          break;
+        default:
+          navigate("/unauthorized");
+      }
     } catch (error) {
       console.error(error);
       toast.error(error.response?.data?.message || "Login failed");
